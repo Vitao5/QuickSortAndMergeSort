@@ -1,0 +1,1087 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Merge Sort e Quick Sort — Apresentação Interativa</title>
+<style>
+  :root{
+    --primary:#065A82;
+    --primary-light:#3F8CA8;
+    --secondary:#1C7293;
+    --accent:#21295C;
+    --bg-soft:#EAF2F6;
+    --bg-light:#FFFFFF;
+    --text-dark:#1B2530;
+    --text-muted:#5B6B76;
+    --ok:#1FA37A;
+    --compare:#E2725B;
+    --swap:#D9A441;
+    --pivot:#21295C;
+    --white:#FFFFFF;
+    --font-head: Georgia, 'Times New Roman', serif;
+    --font-body: 'Segoe UI', Helvetica, Arial, sans-serif;
+    --font-mono: 'Consolas', 'Courier New', monospace;
+  }
+  *{box-sizing:border-box;}
+  html,body{
+    margin:0; padding:0; height:100%; width:100%;
+    font-family:var(--font-body); color:var(--text-dark);
+    background:#10131F;
+    overflow:hidden;
+  }
+  button{font-family:var(--font-body); cursor:pointer;}
+
+  /* ---------------- Deck / slide mechanics ---------------- */
+  .deck{
+    position:relative; width:100vw; height:100vh;
+  }
+  .slide{
+    position:absolute; inset:0;
+    display:none;
+    flex-direction:column;
+    background:var(--bg-light);
+    color:var(--text-dark);
+    padding-bottom:8.5vh;
+    font-size: 28px !important;
+  }
+  .slide.active{ display:flex; }
+  .slide.dark{ background:var(--accent); color:var(--white); }
+
+  .slide-inner{
+    flex:1;
+    width:100%;
+    max-width:1400px;
+    margin:0 auto;
+    padding:3.6vh 4.5vw 2vh 4.5vw;
+    display:flex;
+    flex-direction:column;
+    min-height:0;
+  }
+
+  .badge{
+    display:inline-flex; align-items:center; gap:.4em;
+    align-self:flex-start;
+    font-size:clamp(11px,1.05vw,14px);
+    font-weight:700;
+    letter-spacing:.03em;
+    padding:.5em 1em;
+    border-radius:999px;
+    background:var(--bg-soft);
+    color:var(--primary);
+    margin-bottom:1.6vh;
+  }
+  .slide.dark .badge{ background:rgba(255,255,255,.1); color:#9FB8C8; }
+  .badge b{ color:var(--secondary); }
+  .slide.dark .badge b{ color:#5FB8D6; }
+
+  h1.title{
+    font-family:var(--font-head);
+    font-weight:700;
+    font-size:clamp(28px,3.6vw,46px);
+    line-height:1.08;
+    margin:0 0 1.6vh 0;
+  }
+
+p,li{
+  font-size: 28px !important;
+}
+  h2.subtitle{
+    font-family:var(--font-body);
+    font-weight:400;
+    font-style:italic;
+    font-size:clamp(13px,1.15vw,17px);
+    color:var(--text-muted);
+    margin:0 0 2vh 0;
+  }
+  .slide.dark h2.subtitle{ color:#B9CBDA; }
+
+  p.lead{
+    font-size:clamp(14px,1.3vw,18px);
+    line-height:1.5;
+    max-width:70ch;
+    margin:0 0 1.6vh 0;
+  }
+
+  ul.points{
+    list-style:none; margin:0; padding:0;
+  }
+  ul.points li{
+    position:relative;
+    padding-left:1.3em;
+    margin-bottom:.85em;
+    font-size:clamp(13px,1.15vw,16px);
+    line-height:1.45;
+  }
+  ul.points li::before{
+    content:"–";
+    position:absolute; left:0; color:var(--secondary); font-weight:700;
+  }
+  .slide.dark ul.points li::before{ color:#5FB8D6; }
+
+  .footer-row{
+    display:flex; justify-content:space-between; align-items:center;
+    padding:1.4vh 4.5vw; font-size:12px; color:var(--text-muted);
+  }
+  .slide.dark .footer-row{ color:#8CA3B4; }
+
+  /* ---------------- Nav controls ---------------- */
+  .nav-controls{
+    position:fixed; left:50%; bottom:2.2vh; transform:translateX(-50%);
+    display:flex; align-items:center; gap:14px;
+    background:rgba(20,26,40,.88);
+    padding:8px 16px; border-radius:999px;
+    z-index:1000;
+    box-shadow:0 8px 24px rgba(0,0,0,.3);
+  }
+  .nav-controls button{
+    background:none; border:none; color:#DCE7EE;
+    font-size:18px; width:32px; height:32px; border-radius:50%;
+    display:flex; align-items:center; justify-content:center;
+    transition:background .15s ease;
+  }
+  .nav-controls button:hover{ background:rgba(255,255,255,.12); }
+  .nav-controls button:disabled{ opacity:.3; cursor:default; }
+  .nav-controls button:disabled:hover{ background:none; }
+  .dots{ display:flex; gap:6px; }
+  .dot{
+    width:7px; height:7px; border-radius:50%;
+    background:#48586B; cursor:pointer; transition:background .15s, transform .15s;
+  }
+  .dot.active{ background:#5FB8D6; transform:scale(1.35); }
+  .counter{ font-size:11px; color:#93A5B5; min-width:38px; text-align:center; font-variant-numeric:tabular-nums;}
+  .hint{
+    position:fixed; top:2vh; right:2.2vw; font-size:11px; color:#8CA3B4;
+    z-index:1000; background:rgba(20,26,40,.7); padding:6px 12px; border-radius:999px;
+  }
+  .slide.light-hint{ color:var(--text-muted); }
+
+  /* ---------------- Reusable content blocks ---------------- */
+  .two-col{ display:grid; grid-template-columns:1.05fr .95fr; gap:2.4vw; flex:1; min-height:0; }
+  .card{ background:var(--bg-soft); border-radius:14px; padding:2vh 2vw;}
+  .card-dark{ background:var(--accent); color:var(--white); border-radius:14px; padding:2vh 2vw; font-size: 30px !important; }
+
+  .steps-row{ display:flex; gap:1.4vw; flex:1; }
+  .step-card{
+    flex:1; background:var(--bg-soft); border-radius:14px; padding:2.2vh 1.4vw;
+    display:flex; flex-direction:column; align-items:center; text-align:center;
+    position:relative;
+  }
+  .step-card.mid{ background:var(--primary); color:var(--white); }
+  .step-num{
+    width:56px; height:56px; border-radius:50%; background:var(--secondary); color:var(--white);
+    display:flex; align-items:center; justify-content:center; font-family:var(--font-head); font-weight:700; font-size:22px;
+    margin-bottom:1.4vh;
+  }
+  .step-card.mid .step-num{ background:var(--white); color:var(--primary); }
+  .step-title{ font-family:var(--font-head); font-weight:700; font-size:clamp(15px,1.3vw,19px); margin-bottom:1vh; }
+  .step-desc{ font-size: 28px; color: black; line-height:1.4; }
+  .step-card.mid .step-desc{ color:#DCEAF2; }
+  .arrow-between{ display:flex; align-items:center; font-size:26px; color:var(--secondary); font-weight:700; padding:0 .3vw; }
+
+  .stat-table{ width:100%; border-collapse:collapse; }
+  .stat-table td{ padding:.75em 0; font-size:clamp(12px,1vw,14px); border-bottom:1px solid rgba(255,255,255,.12); }
+  .stat-table tr:last-child td{ border-bottom:none; }
+  .stat-table td.k{ color:#AFC3D0; }
+  .stat-table td.v{ text-align:right; font-family:var(--font-mono); font-weight:700; color:#AFC3D0; }
+  .stat-table tr.hi td.k, .stat-table tr.hi td.v{ color:var(--white); }
+  .stat-table tr.hi td.v{ color:#5FB8D6; }
+
+  /* Cover slide */
+  .cover-eyebrow{ font-size:clamp(11px,1vw,14px); letter-spacing:.14em; color:#9FB8C8; margin-bottom:1.4vh; }
+  .cover-title{ font-family:var(--font-head); font-weight:700; font-size:clamp(34px,5.4vw,64px); color:var(--white); line-height:1.05; margin:0 0 1.6vh 0; }
+  .cover-sub{ font-size: 30px; font-style:italic; color:white; max-width:60ch; margin-bottom:3vh;}
+  .cover-parts{ display:flex; gap:1vw; margin-top:auto; }
+  .cover-part{
+    flex:1; background:#1B2C57; border:1px solid var(--secondary); border-radius:10px;
+    padding:1.4vh 1vw; display:flex; align-items:center; gap:.8vw;
+  }
+  .cover-part b{ font-family:var(--font-head); font-size: 30px !important; color:var(--secondary); }
+  .cover-part span{ font-size: 28px; font-weight:700; color:var(--white); }
+  .cover-live{ font-size:clamp(9.5px,.8vw,11px); color:#7C93A5; margin-top:.6vh; }
+  .cover-demo{
+    flex:1; display:flex; align-items:center; justify-content:center; gap:2.4vw; min-height:0;
+  }
+  .cover-demo .cd-bars{ display:flex; align-items:flex-end; gap:.5vw; height:16vh; }
+  .cover-demo .cd-bar{ width:1.6vw; max-width:26px; border-radius:4px 4px 0 0; background:var(--secondary); }
+  .cover-demo .cd-arrow{ font-size:28px; color:#5FB8D6; }
+  .cover-demo .cd-label{ font-size:11px; color:#8CA3B4; text-align:center; margin-top:.8vh; }
+  .cover-demo .cd-group{ display:flex; flex-direction:column; align-items:center; }
+
+  /* Agenda */
+  .agenda-grid{ display:grid; grid-template-columns:repeat(4,1fr); gap:1.2vw; flex:1; }
+  .agenda-card{ background:var(--bg-soft); border-radius:14px; padding:1.8vh 1.2vw; display:flex; flex-direction:column; height: 350px !important; }
+  .agenda-num{ width:46px; height:46px; border-radius:50%; background:var(--secondary); color:var(--white); display:flex; align-items:center; justify-content:center; font-family:var(--font-head); font-weight:700; font-size:18px; margin-bottom:1.2vh; }
+  .agenda-card:first-child .agenda-num{ background:var(--primary); }
+  .agenda-t{ font-family:var(--font-head); font-weight:700; font-size: 28px; margin-bottom:.6vh; }
+  .agenda-d{ font-size: 30px; color: black; line-height:1.4; padding-top: 2rem;}
+  .agenda-tag{ margin-top:auto; padding-top:1.2vh; font-size:11px; font-weight:700; color:var(--primary); }
+
+  /* Comparison table */
+  table.compare{ width:100%; border-collapse:collapse; }
+  table.compare th, table.compare td{ padding:1.1vh 1vw; font-size:clamp(12px,1.05vw,15px); text-align:center; }
+  table.compare th:first-child, table.compare td:first-child{ text-align:left; }
+  table.compare thead th{ background:var(--accent); color:var(--white); font-family:var(--font-head); font-weight:700; }
+  table.compare tbody tr:nth-child(odd){ background:var(--bg-soft); }
+  table.compare tbody td:first-child{ font-weight:700; }
+  table.compare tbody td:not(:first-child){ color:var(--primary); font-weight:600; }
+
+  .use-cards{ display:grid; grid-template-columns:1fr 1fr; gap:1.6vw; flex:1; }
+  .use-card{ background:var(--bg-soft); border-radius:14px; overflow:hidden; display:flex; flex-direction:column; }
+  .use-head{ padding:1.6vh 1.4vw; font-family:var(--font-head); font-weight:700; font-size:clamp(15px,1.3vw,19px); color:var(--white); }
+  .use-head.m{ background:var(--primary); }
+  .use-head.q{ background:var(--secondary); }
+  .use-card ul.points{ padding:1.6vh 1.4vw; }
+
+  .conclusion-points{ max-width:80ch; }
+  .conclusion-points li{ font-size:clamp(14px,1.3vw,18px); margin-bottom:1.1em; }
+
+  /* ---------------- Interactive visualizer ---------------- */
+  .viz-slide .slide-inner{ padding-bottom:1vh; }
+  .viz-wrap{ flex:1; display:flex; flex-direction:column; min-height:0; gap:1vh; }
+
+  .viz-toolbar{
+    display:flex; align-items:center; gap:.6vw; flex-wrap:wrap;
+    background:var(--bg-soft); border-radius:10px; padding:.9vh 1vw;
+  }
+  .viz-btn{
+    display:flex; align-items:center; gap:.4em;
+    background:var(--white); border:1px solid #CFE0E8; color:var(--primary);
+    font-size:clamp(11px,.95vw,13px); font-weight:600;
+    padding:.55em 1em; border-radius:8px; transition:background .15s, transform .1s;
+  }
+  .viz-btn:hover{ background:#DCEAF2; }
+  .viz-btn:active{ transform:scale(.96); }
+  .viz-btn.primary{ background:var(--primary); border-color:var(--primary); color:var(--white); }
+  .viz-btn.primary:hover{ background:var(--secondary); }
+  .viz-btn:disabled{ opacity:.4; cursor:default; }
+  .viz-btn:disabled:hover{ background:var(--white); }
+  .viz-speed{ display:flex; align-items:center; gap:.5em; font-size:clamp(10.5px,.9vw,12.5px); color:var(--text-muted); margin-left:auto; }
+  .viz-speed input{ accent-color:var(--primary); }
+
+  .viz-stage{
+    flex:1.35; background:#F6FAFC; border:1px solid #E1EDF2; border-radius:12px;
+    display:flex; align-items:flex-end; justify-content:center;
+    padding:1.6vh 1.4vw .6vh 1.4vw; min-height:0;
+  }
+  .bars{ display:flex; align-items:flex-end; gap:.6vw; width:100%; height:100%; justify-content:center; }
+  .bar-col{ display:flex; flex-direction:column; align-items:center; justify-content:flex-end; height:100%; flex:1; max-width:70px; }
+  .bar-val{ font-family:var(--font-mono); font-size:clamp(10px,.95vw,13px); font-weight:700; color:var(--text-dark); margin-bottom:.4vh; }
+  .bar{
+    width:100%; border-radius:5px 5px 0 0; background:var(--secondary);
+    transition:height .28s ease, background-color .2s ease, box-shadow .2s ease;
+  }
+  .bar.active{ background:var(--primary); }
+  .bar.compare{ background:var(--compare); box-shadow:0 0 0 3px rgba(226,114,93,.28); }
+  .bar.swap{ background:var(--swap); box-shadow:0 0 0 3px rgba(217,164,65,.3); }
+  .bar.pivot{ background:var(--accent); box-shadow:0 0 0 3px rgba(33,41,92,.25); }
+  .bar.final{ background:var(--ok); }
+  .bar-idx{ font-size:9.5px; color:var(--text-muted); margin-top:.35vh; font-family:var(--font-mono); }
+  .bar-ptr{
+    display:flex; flex-direction:column; align-items:center; gap:2px;
+    min-height:36px; justify-content:flex-start; margin-top:3px;
+  }
+  .ptr-chip{
+    font-family:var(--font-mono); font-size:8.5px; font-weight:700; color:#fff;
+    padding:1px 5px; border-radius:4px; white-space:nowrap; line-height:1.4;
+    box-shadow:0 1px 2px rgba(0,0,0,.18);
+  }
+
+  .viz-lower{ flex:1; display:grid; grid-template-columns:1.05fr .95fr; gap:1vw; min-height:0; }
+  .viz-info{ background:var(--bg-soft); border-radius:10px; padding:1.4vh 1.2vw; display:flex; flex-direction:column; min-height:0; }
+  .viz-action{
+    font-size:clamp(12.5px,1.05vw,15px); font-weight:600; color:var(--text-dark);
+    min-height:2.6em; display:flex; align-items:center;
+  }
+  .viz-stats{ display:flex; gap:1.4vw; margin-top:auto; padding-top:1vh; }
+  .stat{ display:flex; flex-direction:column; }
+  .stat-num{ font-family:var(--font-mono); font-size:clamp(18px,1.9vw,26px); font-weight:700; color:var(--primary); }
+  .stat-label{ font-size:10.5px; color:var(--text-muted); }
+
+  .viz-code{
+    background:var(--accent); border-radius:10px; padding:1vh 1.1vw; overflow-y:auto;
+    display:flex; flex-direction:column; min-height:0;
+  }
+  .viz-code-title{ font-size:10px; letter-spacing:.05em; color:#8CA3B4; margin-bottom:.5vh; flex-shrink:0; }
+  .code-line{
+    font-family:var(--font-mono); font-size:clamp(10px,.82vw,12px); color:#9FB2C4;
+    padding:.14em .5em; border-radius:4px; white-space:pre-wrap; line-height:1.35;
+  }
+  .code-line.hl{ background:rgba(95,184,214,.18); color:#DCEAF2; font-weight:700; }
+</style>
+</head>
+<body>
+
+<div class="deck" id="deck">
+
+  <!-- ============ SLIDE 1 — CAPA ============ -->
+  <section class="slide dark active">
+    <div class="slide-inner" style="padding-top:7vh;">
+      <div class="cover-eyebrow">ESTRUTURA DE DADOS II · APRESENTAÇÃO INTERATIVA</div>
+      <div class="cover-title">Merge Sort e Quick Sort</div>
+      <div class="cover-sub">Dividir para conquistar: veja os dois algoritmos ordenando em tempo real, passo a passo, direto na tela.</div>
+      <div class="cover-demo" id="cover-demo"></div>
+      <div class="cover-parts">
+        <div class="cover-part"><b>01</b><span>Fundamentos</span></div>
+        <div class="cover-part"><b>02</b><span>Merge Sort</span></div>
+        <div class="cover-part"><b>03</b><span>Quick Sort</span></div>
+        <div class="cover-part"><b>04</b><span>Comparação &amp; Conclusão</span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ SLIDE 2 — AGENDA ============ -->
+  <section class="slide">
+    <div class="slide-inner">
+      <h1 class="title">Agenda da apresentação</h1>
+      <h2 class="subtitle">Quatro partes, quatro integrantes — do conceito à execução ao vivo</h2>
+      <div class="agenda-grid">
+        <div class="agenda-card">
+          <div class="agenda-num">01</div>
+          <div class="agenda-t">Fundamentos</div>
+          <div class="agenda-d">Algoritmos de ordenação e a estratégia dividir para conquistar</div>
+        </div>
+        <div class="agenda-card">
+          <div class="agenda-num">02</div>
+          <div class="agenda-t">Merge Sort</div>
+          <div class="agenda-d">Conceito e visualização interativa da intercalação</div>
+        </div>
+        <div class="agenda-card">
+          <div class="agenda-num">03</div>
+          <div class="agenda-t">Quick Sort</div>
+          <div class="agenda-d">Conceito e visualização interativa do particionamento</div>
+        </div>
+        <div class="agenda-card" >
+          <div class="agenda-num">04</div>
+          <div class="agenda-t">Comparação &amp; Conclusão</div>
+          <div class="agenda-d">Complexidade, trade-offs e quando usar cada um</div>
+        </div>
+      </div>
+    </div>
+    <div class="footer-row"><span>Integrante 1</span><span>2 / 11</span></div>
+  </section>
+
+  <!-- ============ SLIDE 3 — Parte 1: O que são algoritmos de ordenação ============ -->
+  <section class="slide">
+    <div class="slide-inner">
+      <div class="badge"><b>PARTE 1</b> · Fundamentos</div>
+      <h1 class="title">O que são algoritmos de ordenação?</h1>
+      <div class="two-col">
+        <div>
+          <p class="lead">São procedimentos que reorganizam os elementos de uma coleção (vetor, lista) em uma ordem específica — crescente ou decrescente — comparando e movendo itens segundo um critério.</p>
+          <ul class="points">
+            <li>Já vistos: Bubble Sort, Selection Sort, Insertion Sort → simples, mas O(n²)</li>
+            <li>Hoje: algoritmos recursivos baseados em dividir para conquistar</li>
+            <li>Objetivo: reduzir comparações e trocas em listas grandes</li>
+          </ul>
+        </div>
+        <div class="card-dark">
+          <div style="font-family:var(--font-head); font-weight:700; margin-bottom:1.4vh;">Custo dos algoritmos simples</div>
+          <table class="stat-table" >
+            <tr class="hi"><td class="k"  style="font-size:40px !important;">Bubble Sort</td><td style="font-size:40px !important;">O(n²)</td></tr>
+            <tr class="hi"><td class="k"  style="font-size:40px !important;">Selection Sort</td><td style="font-size:40px !important;">O(n²)</td></tr>
+            <tr class="hi"><td class="k"  style="font-size:40px !important;">Insertion Sort</td><td style="font-size:40px !important;">O(n²)</td></tr>
+            <tr class="hi"><td class="k"  style="font-size:40px !important;">Merge Sort</td><td style="font-size:40px !important;">O(n log n)</td></tr>
+            <tr class="hi"><td class="k"  style="font-size:40px !important;">Quick Sort</td><td style="font-size:40px !important;">O(n log n)*</td></tr>
+          </table>
+          <div style="font-size:10.5px; font-style:italic; color:#9FB2C4; margin-top:1vh;">* caso médio; pior caso O(n²)</div>
+        </div>
+      </div>
+    </div>
+    <div class="footer-row"><span>Integrante 1</span><span>3 / 11</span></div>
+  </section>
+
+  <!-- ============ SLIDE 4 — Parte 1: Dividir para conquistar ============ -->
+  <section class="slide">
+    <div class="slide-inner">
+      <div class="badge"><b>PARTE 1</b> · Fundamentos</div>
+      <h1 class="title">A estratégia: Dividir para Conquistar</h1>
+      <p class="lead">Um paradigma de projeto de algoritmos que resolve um problema grande dividindo-o em subproblemas menores e semelhantes.</p>
+      <div class="steps-row">
+        <div class="step-card">
+          <div class="step-num">1</div>
+          <div class="step-title">DIVIDIR</div>
+          <div class="step-desc">Quebrar o problema em subproblemas menores do mesmo tipo</div>
+        </div>
+        <div class="arrow-between">→</div>
+        <div class="step-card mid">
+          <div class="step-num">2</div>
+          <div class="step-title">CONQUISTAR</div>
+          <div class="step-desc">Resolver cada subproblema recursivamente (caso base = problema trivial)</div>
+        </div>
+        <div class="arrow-between">→</div>
+        <div class="step-card">
+          <div class="step-num">3</div>
+          <div class="step-title">COMBINAR</div>
+          <div class="step-desc">Juntar as soluções dos subproblemas na solução final</div>
+        </div>
+      </div>
+      <p style="font-size:clamp(11.5px,1vw,13.5px); font-style:italic; color:var(--secondary); margin-top:2vh;">Merge Sort e Quick Sort aplicam esse paradigma de formas diferentes: o Merge Sort investe na etapa de combinar; o Quick Sort investe na etapa de dividir — você vai ver isso na prática nos próximos slides.</p>
+    </div>
+    <div class="footer-row"><span>Integrante 1</span><span>4 / 11</span></div>
+  </section>
+
+  <!-- ============ SLIDE 5 — Parte 2: Merge Sort conceito ============ -->
+  <section class="slide">
+    <div class="slide-inner">
+      <div class="badge"><b>PARTE 2</b> · Merge Sort</div>
+      <h1 class="title">Merge Sort: conceito</h1>
+      <div class="two-col">
+        <div>
+          <p class="lead"><b style="color:var(--primary)">Divide</b> o vetor ao meio, recursivamente, até restarem subvetores de 1 elemento (já ordenados por definição) — depois <b style="color:var(--primary)">intercala (merge)</b> os pedaços de volta, sempre em ordem.</p>
+          <ul class="points">
+            <li>Estável: elementos iguais mantêm a ordem relativa</li>
+            <li>Sempre O(n log n), inclusive no pior caso</li>
+            <li>Usa memória auxiliar O(n) para a intercalação</li>
+            <li>No próximo slide: veja a divisão e a intercalação rodando ao vivo</li>
+          </ul>
+        </div>
+        <div class="card">
+          <div style="font-family:var(--font-head); font-weight:700; font-size:clamp(14px,1.2vw,17px); margin-bottom:1.4vh; color:var(--primary);">Divisão recursiva de [4 3 2 1 5 9]</div>
+          <div style="display:flex; flex-direction:column; gap:.55vh; font-family:var(--font-mono); font-weight:700; font-size:clamp(11px,1vw,13px); color:var(--white);">
+            <div style="background:var(--primary); border-radius:6px; padding:.6vh 0; text-align:center;">[4 3 2 1 5 9]</div>
+            <div style="display:flex; gap:.5vw;">
+              <div style="flex:1; background:var(--secondary); border-radius:6px; padding:.6vh 0; text-align:center;">[4 3 2]</div>
+              <div style="flex:1; background:var(--secondary); border-radius:6px; padding:.6vh 0; text-align:center;">[1 5 9]</div>
+            </div>
+            <div style="display:flex; gap:.5vw;">
+              <div style="flex:1; background:var(--primary-light); border-radius:6px; padding:.6vh 0; text-align:center;">[4][3 2]</div>
+              <div style="flex:1; background:var(--primary-light); border-radius:6px; padding:.6vh 0; text-align:center;">[1][5 9]</div>
+            </div>
+            <div style="background:var(--ok); border-radius:6px; padding:.6vh 0; text-align:center;">[1 2 3 4 5 9] ✓ ordenado</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="footer-row"><span>Integrante 2</span><span>5 / 11</span></div>
+  </section>
+
+  <!-- ============ SLIDE 6 — Parte 2: Merge Sort ao vivo ============ -->
+  <section class="slide viz-slide">
+    <div class="slide-inner">
+      <div class="badge"><b>PARTE 2</b> · Merge Sort</div>
+      <h1 class="title" style="font-size:clamp(24px,3vw,36px); margin-bottom:1.2vh;">Merge Sort: execução ao vivo</h1>
+      <div class="viz-wrap">
+        <div class="viz-toolbar">
+          <button class="viz-btn" data-viz="merge" data-act="new">🔀 Novo array</button>
+          <button class="viz-btn primary" data-viz="merge" data-act="playpause">▶ Reproduzir</button>
+          <button class="viz-btn" data-viz="merge" data-act="prev">⏮ Passo anterior</button>
+          <button class="viz-btn" data-viz="merge" data-act="next">Próximo passo ⏭</button>
+          <button class="viz-btn" data-viz="merge" data-act="reset">⟲ Reiniciar</button>
+          <div class="viz-speed">Velocidade
+            <input type="range" min="1" max="5" value="3" data-viz="merge" data-act="speed">
+          </div>
+        </div>
+        <div class="viz-stage"><div class="bars" id="merge-bars"></div></div>
+        <div class="viz-lower">
+          <div class="viz-info">
+            <div class="viz-action" id="merge-action">Clique em "Reproduzir" para começar.</div>
+            <div class="viz-stats">
+              <div class="stat"><span class="stat-num" id="merge-comparisons">0</span><span class="stat-label">comparações</span></div>
+              <div class="stat"><span class="stat-num" id="merge-ops">0</span><span class="stat-label">intercalações</span></div>
+              <div class="stat"><span class="stat-num" id="merge-progress">0 / 0</span><span class="stat-label">passo</span></div>
+            </div>
+          </div>
+          <div class="viz-code">
+            <div class="viz-code-title">merge_sort.cpp</div>
+            <div id="merge-code"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="footer-row"><span>Integrante 2</span><span>6 / 11</span></div>
+  </section>
+
+  <!-- ============ SLIDE 7 — Parte 3: Quick Sort conceito ============ -->
+  <section class="slide">
+    <div class="slide-inner">
+      <div class="badge"><b>PARTE 3</b> · Quick Sort</div>
+      <h1 class="title">Quick Sort: conceito e particionamento</h1>
+      <div class="two-col">
+        <div>
+          <p class="lead">Escolhe um <b style="color:var(--primary)">pivô</b> e particiona o vetor: menores que o pivô à esquerda, maiores à direita. Depois aplica o mesmo processo, recursivamente, em cada lado.</p>
+          <ul class="points">
+            <li>Não é estável e ordena in-place (pouca memória extra)</li>
+            <li>Caso médio O(n log n); pior caso O(n²) com pivô mal escolhido</li>
+            <li>Na prática, costuma ser mais rápido que o Merge Sort</li>
+            <li>No próximo slide: veja o particionamento (esquema de Lomuto) rodando ao vivo</li>
+          </ul>
+        </div>
+        <div class="card">
+          <div style="font-family:var(--font-head); font-weight:700; font-size:clamp(14px,1.2vw,17px); margin-bottom:1.4vh; color:var(--primary);">Particionamento de [4 3 2 1 5]</div>
+          <div style="display:flex; gap:.4vw; margin-bottom:1vh;">
+            <div class="pchip" style="background:var(--secondary);">4</div>
+            <div class="pchip" style="background:var(--secondary);">3</div>
+            <div class="pchip" style="background:var(--secondary);">2</div>
+            <div class="pchip" style="background:var(--secondary);">1</div>
+            <div class="pchip" style="background:var(--accent);">5</div>
+          </div>
+          <div style="font-size:11px; color:var(--text-muted); margin-bottom:1.4vh;">pivô = último elemento (5)</div>
+          <div style="display:flex; gap:.4vw; margin-bottom:1vh;">
+            <div class="pchip" style="background:var(--primary-light);">4</div>
+            <div class="pchip" style="background:var(--primary-light);">3</div>
+            <div class="pchip" style="background:var(--primary-light);">2</div>
+            <div class="pchip" style="background:var(--primary-light);">1</div>
+            <div class="pchip" style="background:var(--ok);">5</div>
+          </div>
+          <div style="font-size:11px; color:var(--text-muted);">todos ≤ 5 → pivô já na posição final (índice 4)</div>
+        </div>
+      </div>
+    </div>
+    <div class="footer-row"><span>Integrante 3</span><span>7 / 11</span></div>
+  </section>
+
+  <!-- ============ SLIDE 8 — Parte 3: Quick Sort ao vivo ============ -->
+  <section class="slide viz-slide">
+    <div class="slide-inner">
+      <div class="badge"><b>PARTE 3</b> · Quick Sort</div>
+      <h1 class="title" style="font-size:clamp(24px,3vw,36px); margin-bottom:1.2vh;">Quick Sort: execução ao vivo</h1>
+      <div class="viz-wrap">
+        <div class="viz-toolbar">
+          <button class="viz-btn" data-viz="quick" data-act="new">🔀 Novo array</button>
+          <button class="viz-btn primary" data-viz="quick" data-act="playpause">▶ Reproduzir</button>
+          <button class="viz-btn" data-viz="quick" data-act="prev">⏮ Passo anterior</button>
+          <button class="viz-btn" data-viz="quick" data-act="next">Próximo passo ⏭</button>
+          <button class="viz-btn" data-viz="quick" data-act="reset">⟲ Reiniciar</button>
+          <div class="viz-speed">Velocidade
+            <input type="range" min="1" max="5" value="3" data-viz="quick" data-act="speed">
+          </div>
+        </div>
+        <div class="viz-stage"><div class="bars" id="quick-bars"></div></div>
+        <div class="viz-lower">
+          <div class="viz-info">
+            <div class="viz-action" id="quick-action">Clique em "Reproduzir" para começar.</div>
+            <div class="viz-stats">
+              <div class="stat"><span class="stat-num" id="quick-comparisons">0</span><span class="stat-label">comparações</span></div>
+              <div class="stat"><span class="stat-num" id="quick-ops">0</span><span class="stat-label">trocas</span></div>
+              <div class="stat"><span class="stat-num" id="quick-progress">0 / 0</span><span class="stat-label">passo</span></div>
+            </div>
+          </div>
+          <div class="viz-code">
+            <div class="viz-code-title">quick_sort.cpp</div>
+            <div id="quick-code"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="footer-row"><span>Integrante 3</span><span>8 / 11</span></div>
+  </section>
+
+  <!-- ============ SLIDE 9 — Parte 4: Comparação ============ -->
+  <section class="slide">
+    <div class="slide-inner">
+      <div class="badge"><b>PARTE 4</b> · Comparação &amp; Conclusão</div>
+      <h1 class="title">Merge Sort vs. Quick Sort</h1>
+      <table class="compare">
+        <thead><tr><th>Critério</th><th>Merge Sort</th><th>Quick Sort</th></tr></thead>
+        <tbody>
+          <tr><td>Melhor caso</td><td>O(n log n)</td><td>O(n log n)</td></tr>
+          <tr><td>Caso médio</td><td>O(n log n)</td><td>O(n log n)</td></tr>
+          <tr><td>Pior caso</td><td>O(n log n)</td><td>O(n²)</td></tr>
+          <tr><td>Memória extra</td><td>O(n)</td><td>O(log n)</td></tr>
+          <tr><td>Estável</td><td>Sim</td><td>Não</td></tr>
+          <tr><td>In-place</td><td>Não</td><td>Sim</td></tr>
+          <tr><td>Ponto forte</td><td>Consistência garantida</td><td>Velocidade na prática</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="footer-row"><span>Integrante 4</span><span>9 / 11</span></div>
+  </section>
+
+  <!-- ============ SLIDE 10 — Parte 4: Quando usar ============ -->
+  <section class="slide">
+    <div class="slide-inner">
+      <div class="badge"><b>PARTE 4</b> · Comparação &amp; Conclusão</div>
+      <h1 class="title">Quando usar cada algoritmo?</h1>
+      <div class="use-cards">
+        <div class="use-card">
+          <div class="use-head m">Use Merge Sort quando...</div>
+          <ul class="points">
+            <li>Estabilidade é obrigatória (ex.: ordenar por múltiplas chaves)</li>
+            <li>É preciso garantir O(n log n) mesmo no pior caso</li>
+            <li>Os dados estão em memória externa / listas encadeadas</li>
+          </ul>
+        </div>
+        <div class="use-card">
+          <div class="use-head q">Use Quick Sort quando...</div>
+          <ul class="points">
+            <li>Memória é limitada (ordenação in-place)</li>
+            <li>O desempenho médio importa mais que o pior caso</li>
+            <li>É a base de bibliotecas padrão (ex.: introsort em C++)</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+    <div class="footer-row"><span>Integrante 4</span><span>10 / 11</span></div>
+  </section>
+
+  <!-- ============ SLIDE 11 — Conclusão ============ -->
+  <section class="slide dark">
+    <div class="slide-inner" style="padding-top:6vh;">
+      <h1 class="title" style="color:var(--white);">Conclusão</h1>
+      <ul class="points conclusion-points" style="color:#E4EEF5; margin-top:2vh;">
+        <li>Ambos aplicam dividir para conquistar, mas priorizam etapas diferentes: Merge Sort combina; Quick Sort divide (particiona).</li>
+        <li>Merge Sort garante O(n log n) sempre, ao custo de memória extra e de não ser in-place.</li>
+        <li>Quick Sort é in-place e rápido na prática, mas seu pior caso é O(n²) sem boas escolhas de pivô.</li>
+        <li>Não existe "o melhor" — a escolha depende dos requisitos: estabilidade, memória disponível e garantias de desempenho.</li>
+      </ul>
+    </div>
+    <div class="footer-row"><span>Integrante 4</span><span>11 / 11</span></div>
+  </section>
+
+</div>
+
+<div class="nav-controls">
+  <button id="prevBtn" title="Slide anterior (←)">‹</button>
+  <div class="dots" id="dots"></div>
+  <button id="nextBtn" title="Próximo slide (→)">›</button>
+  <span class="counter" id="counter">1 / 11</span>
+</div>
+
+<style>
+  .pchip{
+    width:38px; height:38px; border-radius:8px; color:#fff; font-family:var(--font-mono);
+    font-weight:700; display:flex; align-items:center; justify-content:center; font-size:14px;
+  }
+</style>
+
+<script>
+/* =========================================================================
+   PARTE A — Navegação do deck
+   ========================================================================= */
+(function(){
+  const slides = Array.from(document.querySelectorAll('.slide'));
+  const dotsWrap = document.getElementById('dots');
+  const counter = document.getElementById('counter');
+  const prevBtn = document.getElementById('prevBtn');
+  const nextBtn = document.getElementById('nextBtn');
+  let current = 0;
+
+  slides.forEach((_, i) => {
+    const d = document.createElement('div');
+    d.className = 'dot' + (i === 0 ? ' active' : '');
+    d.addEventListener('click', () => goTo(i));
+    dotsWrap.appendChild(d);
+  });
+  const dots = Array.from(dotsWrap.children);
+
+  function goTo(i){
+    if (i < 0 || i >= slides.length) return;
+    slides[current].classList.remove('active');
+    dots[current].classList.remove('active');
+    current = i;
+    slides[current].classList.add('active');
+    dots[current].classList.add('active');
+    counter.textContent = (current + 1) + ' / ' + slides.length;
+    prevBtn.disabled = current === 0;
+    nextBtn.disabled = current === slides.length - 1;
+  }
+
+  prevBtn.addEventListener('click', () => goTo(current - 1));
+  nextBtn.addEventListener('click', () => goTo(current + 1));
+
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'ArrowRight' || e.key === ' ' || e.key === 'PageDown') { e.preventDefault(); goTo(current + 1); }
+    else if (e.key === 'ArrowLeft' || e.key === 'PageUp') { e.preventDefault(); goTo(current - 1); }
+    else if (e.key === 'Home') { e.preventDefault(); goTo(0); }
+    else if (e.key === 'End') { e.preventDefault(); goTo(slides.length - 1); }
+  });
+
+  goTo(0);
+})();
+
+/* Ilustração decorativa da capa: barras desordenadas → ordenadas */
+(function(){
+  const wrap = document.getElementById('cover-demo');
+  if (!wrap) return;
+  const before = [40, 70, 25, 95, 55, 30, 80];
+  const after = before.slice().sort((a,b) => a-b);
+
+  function group(values, label){
+    const g = document.createElement('div');
+    g.className = 'cd-group';
+    const bars = document.createElement('div');
+    bars.className = 'cd-bars';
+    values.forEach(v => {
+      const b = document.createElement('div');
+      b.className = 'cd-bar';
+      b.style.height = v + '%';
+      bars.appendChild(b);
+    });
+    const lbl = document.createElement('div');
+    lbl.className = 'cd-label';
+    lbl.textContent = label;
+    g.appendChild(bars);
+    g.appendChild(lbl);
+    return g;
+  }
+
+  wrap.appendChild(group(before, 'desordenado'));
+  const arrow = document.createElement('div');
+  arrow.className = 'cd-arrow';
+  arrow.textContent = '→';
+  wrap.appendChild(arrow);
+  const afterGroup = group(after, 'ordenado');
+  afterGroup.querySelectorAll('.cd-bar').forEach(b => b.style.background = 'var(--ok)');
+  wrap.appendChild(afterGroup);
+})();
+
+/* =========================================================================
+   PARTE B — Geradores de passos dos algoritmos
+   Cada gerador roda o algoritmo sobre uma cópia do array e grava um
+   "snapshot" (estado completo + destaques) a cada operação relevante,
+   para permitir reprodução passo a passo (para frente e para trás).
+   ========================================================================= */
+
+function generateMergeSortSteps(inputArr){
+  const arr = inputArr.slice();
+  const steps = [];
+  let comparisons = 0, ops = 0;
+
+  function push(opts){
+    steps.push({
+      array: arr.slice(),
+      compare: opts.compare || null,
+      swap: null,
+      pivot: null,
+      range: opts.range || null,
+      placed: opts.placed || null,
+      pointers: opts.pointers || [],
+      action: opts.action,
+      codeLine: (opts.codeLine === undefined ? -1 : opts.codeLine),
+      comparisons, ops
+    });
+  }
+
+  push({ range:[0, arr.length-1], action:'Vetor inicial — ainda não ordenado.', codeLine:0 });
+
+  function mergeSort(esq, dir){
+    if (esq >= dir){
+      if (esq === dir){
+        push({ range:[esq,dir], pointers:[{l:'esq/dir', i:esq}], action:`Caso base: a posição ${esq} tem só 1 elemento (${arr[esq]}) — já está "ordenada".`, codeLine:1 });
+      }
+      return;
+    }
+    const meio = esq + Math.floor((dir-esq)/2);
+    push({ range:[esq,dir], pointers:[{l:'esq',i:esq},{l:'meio',i:meio},{l:'dir',i:dir}], action:`Dividindo [${esq}..${dir}] em [${esq}..${meio}] e [${meio+1}..${dir}].`, codeLine:2 });
+    mergeSort(esq, meio);
+    mergeSort(meio+1, dir);
+    merge(esq, meio, dir);
+  }
+
+  function merge(esq, meio, dir){
+    let i = esq, j = meio+1;
+    const temp = [];
+    push({ range:[esq,dir], pointers:[{l:'esq',i:esq},{l:'i',i:i},{l:'meio',i:meio},{l:'j',i:j},{l:'dir',i:dir}], action:`Intercalando o bloco [${esq}..${meio}] com [${meio+1}..${dir}].`, codeLine:5 });
+    while (i <= meio && j <= dir){
+      comparisons++;
+      push({ range:[esq,dir], compare:[i,j], pointers:[{l:'i',i:i},{l:'meio',i:meio},{l:'j',i:j}], action:`Comparando posição ${i} (valor ${arr[i]}) com posição ${j} (valor ${arr[j]}).`, codeLine:6 });
+      if (arr[i] <= arr[j]){ temp.push(arr[i]); i++; }
+      else { temp.push(arr[j]); j++; }
+    }
+    while (i <= meio){ temp.push(arr[i]); i++; }
+    while (j <= dir){ temp.push(arr[j]); j++; }
+    for (let k = esq; k <= dir; k++){ arr[k] = temp[k-esq]; }
+    ops++;
+    push({ range:[esq,dir], placed:[esq,dir], action:`Bloco [${esq}..${dir}] intercalado — agora está ordenado.`, codeLine:7 });
+  }
+
+  mergeSort(0, arr.length-1);
+  push({ placed:[0, arr.length-1], action:'Vetor totalmente ordenado! ✓', codeLine:-1 });
+  return steps;
+}
+
+function generateQuickSortSteps(inputArr){
+  const arr = inputArr.slice();
+  const steps = [];
+  let comparisons = 0, ops = 0;
+  let finalized = [];
+
+  function push(opts){
+    steps.push({
+      array: arr.slice(),
+      compare: opts.compare || null,
+      swap: opts.swap || null,
+      pivot: (opts.pivot === undefined ? null : opts.pivot),
+      range: opts.range || null,
+      placed: opts.placed || null,
+      pointers: opts.pointers || [],
+      finalized: finalized.slice(),
+      action: opts.action,
+      codeLine: (opts.codeLine === undefined ? -1 : opts.codeLine),
+      comparisons, ops
+    });
+  }
+
+  push({ range:[0, arr.length-1], action:'Vetor inicial — ainda não ordenado.', codeLine:0 });
+
+  function quickSort(baixo, alto){
+    if (baixo < alto){
+      const p = particiona(baixo, alto);
+      finalized.push(p);
+      push({ range:[baixo,alto], pivot:p, placed:[p,p], pointers:[{l:'p',i:p}], action:`Pivô (${arr[p]}) fixado na posição final ${p}.`, codeLine:2 });
+      quickSort(baixo, p-1);
+      quickSort(p+1, alto);
+    } else if (baixo === alto){
+      finalized.push(baixo);
+      push({ range:[baixo,alto], pointers:[{l:'baixo/alto', i:baixo}], action:`Caso base: a posição ${baixo} tem só 1 elemento (${arr[baixo]}) — já está em ordem.`, codeLine:1 });
+    }
+  }
+
+  function particiona(baixo, alto){
+    const pivo = arr[alto];
+    let i = baixo - 1;
+    const iPtr = () => (i >= baixo-1 && i <= alto ? [{l:'i', i}] : []);
+    push({ range:[baixo,alto], pivot:alto, pointers:[{l:'baixo',i:baixo},{l:'alto/pivô',i:alto}], action:`Novo pivô: ${pivo} (posição ${alto}).`, codeLine:7 });
+    for (let j = baixo; j < alto; j++){
+      comparisons++;
+      push({ range:[baixo,alto], pivot:alto, compare:[j,alto], pointers:[...iPtr(),{l:'j',i:j},{l:'alto/pivô',i:alto}], action:`Comparando ${arr[j]} (posição ${j}) com o pivô ${pivo}.`, codeLine:8 });
+      if (arr[j] <= pivo){
+        i++;
+        if (i !== j){
+          const t = arr[i]; arr[i] = arr[j]; arr[j] = t;
+          ops++;
+          push({ range:[baixo,alto], pivot:alto, swap:[i,j], pointers:[{l:'i',i},{l:'j',i:j},{l:'alto/pivô',i:alto}], action:`${arr[i]} ≤ pivô → troca as posições ${i} e ${j}.`, codeLine:8 });
+        } else {
+          push({ range:[baixo,alto], pivot:alto, swap:[i,j], pointers:[{l:'i',i},{l:'j',i:j},{l:'alto/pivô',i:alto}], action:`${arr[i]} ≤ pivô → já está na posição correta (i === j).`, codeLine:8 });
+        }
+      }
+    }
+    if (i+1 !== alto){
+      const t = arr[i+1]; arr[i+1] = arr[alto]; arr[alto] = t;
+      ops++;
+    }
+    push({ range:[baixo,alto], swap:[i+1,alto], pointers:[{l:'i+1',i:i+1},{l:'alto/pivô',i:alto}], action:`Troca final: o pivô vai para a posição ${i+1}.`, codeLine:9 });
+    return i+1;
+  }
+
+  quickSort(0, arr.length-1);
+  push({ placed:[0, arr.length-1], finalized: Array.from({length:arr.length}, (_,k)=>k), action:'Vetor totalmente ordenado! ✓', codeLine:-1 });
+  return steps;
+}
+
+/* =========================================================================
+   PARTE C — Motor do visualizador (compartilhado pelos dois algoritmos)
+   ========================================================================= */
+
+const MERGE_CODE = [
+  'void mergeSort(esq, dir) {',
+  '  if (esq >= dir) return;    // caso base',
+  '  meio = esq + (dir-esq)/2; divide e chama recursão',
+  '}',
+  'void merge(esq, meio, dir) {',
+  '  enquanto i<=meio e j<=dir:',
+  '    compara nums[i] e nums[j]',
+  '  copia o menor primeiro; no fim, copia o restante',
+  '}',
+];
+
+const QUICK_CODE = [
+  'void quickSort(baixo, alto) {',
+  '  if (baixo < alto) {',
+  '    p = particiona(baixo, alto);',
+  '    quickSort(baixo,p-1); quickSort(p+1,alto);',
+  '  }',
+  '}',
+  '// dentro de particiona(baixo, alto):',
+  '  pivo = nums[alto];  i = baixo - 1;',
+  '  para j: se nums[j] <= pivo → i++; troca(i,j);',
+  '  troca(i+1, alto)  →  pivô na posição final',
+];
+
+function makeVisualizer(cfg){
+  // cfg: { key, generate, codeLines, opsLabel, randomSize, elements... }
+  const els = {
+    bars: document.getElementById(cfg.key + '-bars'),
+    action: document.getElementById(cfg.key + '-action'),
+    comparisons: document.getElementById(cfg.key + '-comparisons'),
+    ops: document.getElementById(cfg.key + '-ops'),
+    progress: document.getElementById(cfg.key + '-progress'),
+    code: document.getElementById(cfg.key + '-code'),
+  };
+
+  // monta as linhas de pseudocódigo uma única vez
+  cfg.codeLines.forEach((line, idx) => {
+    const div = document.createElement('div');
+    div.className = 'code-line';
+    div.dataset.line = idx;
+    div.textContent = line;
+    els.code.appendChild(div);
+  });
+  const codeLineEls = Array.from(els.code.children);
+
+  let steps = [];
+  let idx = 0;
+  let playing = false;
+  let timer = null;
+  let baseArray = cfg.randomArray();
+
+  function speedMs(){
+    const range = document.querySelector(`input[data-viz="${cfg.key}"][data-act="speed"]`);
+    const v = range ? Number(range.value) : 3;
+    // 1 (lento) .. 5 (rápido)
+    return { 1:1400, 2:1000, 3:700, 4:420, 5:220 }[v] || 700;
+  }
+
+  function buildBars(n){
+    els.bars.innerHTML = '';
+    for (let i = 0; i < n; i++){
+      const col = document.createElement('div');
+      col.className = 'bar-col';
+      col.innerHTML = `<div class="bar-val" data-val></div><div class="bar" data-bar></div><div class="bar-ptr" data-ptr></div><div class="bar-idx">${i}</div>`;
+      els.bars.appendChild(col);
+    }
+  }
+
+  const PTR_COLOR = {
+    i: 'var(--compare)',
+    'i+1': 'var(--compare)',
+    j: 'var(--swap)',
+    meio: 'var(--primary)',
+    esq: 'var(--secondary)',
+    dir: 'var(--secondary)',
+    'esq/dir': 'var(--secondary)',
+    baixo: 'var(--secondary)',
+    'baixo/alto': 'var(--secondary)',
+    'alto/pivô': 'var(--accent)',
+    p: 'var(--accent)',
+  };
+
+  function render(){
+    const step = steps[idx];
+    if (!step) return;
+    const max = Math.max(...step.array);
+    const cols = els.bars.children;
+
+    // agrupa ponteiros por índice de coluna (vários podem apontar pra mesma posição)
+    const ptrByIdx = {};
+    (step.pointers || []).forEach(p => {
+      if (p.i < 0 || p.i >= step.array.length) return; // fora do vetor (ex.: i = baixo-1)
+      (ptrByIdx[p.i] = ptrByIdx[p.i] || []).push(p.l);
+    });
+
+    for (let i = 0; i < step.array.length; i++){
+      const col = cols[i];
+      if (!col) continue;
+      const barEl = col.querySelector('[data-bar]');
+      const valEl = col.querySelector('[data-val]');
+      const ptrEl = col.querySelector('[data-ptr]');
+      valEl.textContent = step.array[i];
+      barEl.style.height = Math.max(6, (step.array[i] / max) * 68) + '%';
+
+      let cls = 'bar';
+      const inSwap = step.swap && (i === step.swap[0] || i === step.swap[1]);
+      const inCompare = step.compare && (i === step.compare[0] || i === step.compare[1]);
+      const isPivot = step.pivot !== null && step.pivot !== undefined && i === step.pivot;
+      const inFinal = step.finalized && step.finalized.includes(i);
+      const inPlaced = step.placed && i >= step.placed[0] && i <= step.placed[1];
+      const inRange = step.range && i >= step.range[0] && i <= step.range[1];
+
+      if (inSwap) cls += ' swap';
+      else if (inCompare) cls += ' compare';
+      else if (isPivot) cls += ' pivot';
+      else if (inFinal) cls += ' final';
+      else if (inPlaced) cls += ' final';
+      else if (inRange) cls += ' active';
+      barEl.className = cls;
+
+      const labels = ptrByIdx[i];
+      ptrEl.innerHTML = labels
+        ? labels.map(l => `<span class="ptr-chip" style="background:${PTR_COLOR[l] || 'var(--secondary)'}">${l}</span>`).join('')
+        : '';
+    }
+
+    els.action.textContent = step.action;
+    els.comparisons.textContent = step.comparisons;
+    els.ops.textContent = step.ops;
+    els.progress.textContent = (idx+1) + ' / ' + steps.length;
+
+    codeLineEls.forEach(el => el.classList.toggle('hl', Number(el.dataset.line) === step.codeLine));
+
+    const playBtn = document.querySelector(`.viz-btn[data-viz="${cfg.key}"][data-act="playpause"]`);
+    const nextBtn = document.querySelector(`.viz-btn[data-viz="${cfg.key}"][data-act="next"]`);
+    const prevBtn = document.querySelector(`.viz-btn[data-viz="${cfg.key}"][data-act="prev"]`);
+    if (nextBtn) nextBtn.disabled = idx >= steps.length - 1;
+    if (prevBtn) prevBtn.disabled = idx <= 0;
+    if (idx >= steps.length - 1) pause();
+  }
+
+  function loadArray(arr){
+    baseArray = arr;
+    steps = cfg.generate(arr);
+    idx = 0;
+    buildBars(arr.length);
+    render();
+  }
+
+  function play(){
+    if (idx >= steps.length - 1) return;
+    playing = true;
+    const playBtn = document.querySelector(`.viz-btn[data-viz="${cfg.key}"][data-act="playpause"]`);
+    if (playBtn) playBtn.innerHTML = '⏸ Pausar';
+    clearTimeout(timer);
+    const tick = () => {
+      if (!playing) return;
+      if (idx >= steps.length - 1){ pause(); return; }
+      idx++;
+      render();
+      timer = setTimeout(tick, speedMs());
+    };
+    timer = setTimeout(tick, speedMs());
+  }
+
+  function pause(){
+    playing = false;
+    clearTimeout(timer);
+    const playBtn = document.querySelector(`.viz-btn[data-viz="${cfg.key}"][data-act="playpause"]`);
+    if (playBtn) playBtn.innerHTML = '▶ Reproduzir';
+  }
+
+  document.querySelectorAll(`[data-viz="${cfg.key}"]`).forEach(el => {
+    const act = el.dataset.act;
+    if (act === 'new'){
+      el.addEventListener('click', () => { pause(); loadArray(cfg.randomArray()); });
+    } else if (act === 'playpause'){
+      el.addEventListener('click', () => { playing ? pause() : play(); });
+    } else if (act === 'next'){
+      el.addEventListener('click', () => { pause(); if (idx < steps.length-1){ idx++; render(); } });
+    } else if (act === 'prev'){
+      el.addEventListener('click', () => { pause(); if (idx > 0){ idx--; render(); } });
+    } else if (act === 'reset'){
+      el.addEventListener('click', () => { pause(); loadArray(baseArray); });
+    }
+  });
+
+  loadArray(baseArray);
+  return { loadArray };
+}
+
+function randomArray(n, min, max){
+  const seen = new Set();
+  const out = [];
+  while (out.length < n){
+    const v = Math.floor(Math.random() * (max-min+1)) + min;
+    if (seen.has(v)) continue;
+    seen.add(v);
+    out.push(v);
+  }
+  return out;
+}
+
+makeVisualizer({
+  key: 'merge',
+  generate: generateMergeSortSteps,
+  codeLines: MERGE_CODE,
+  randomArray: () => randomArray(8, 8, 95),
+});
+
+makeVisualizer({
+  key: 'quick',
+  generate: generateQuickSortSteps,
+  codeLines: QUICK_CODE,
+  randomArray: () => randomArray(8, 8, 95),
+});
+</script>
+
+</body>
+</html>
